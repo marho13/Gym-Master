@@ -168,13 +168,17 @@ def runner(num_episodes, max_timestep, BATCH_SIZE, env):
             timestep += 1
             action = agent.select_action(state, policy_net)
             reward = env.step(action)
+            #used to handle 0 value rewards
             reward = reward - 0.00001
+            #Does the road detection and if the car is off the road
+            #It penalizes the RL algorithm
             stateResize = resize(state)
             stateResize = np.resize(stateResize, new_shape=(1, 224, 224, 3))
             prediction = road.predict(stateResize)
             if np.argmax(prediction) != 1:
-                reward = reward - 0.001
+                reward = reward - 0.01
             reward = torch.tensor(reward).to('cuda')
+            
             episodeRew[-1] += reward.float()
             #print(reward)
             next_state = env.get_state()
@@ -200,7 +204,8 @@ def runner(num_episodes, max_timestep, BATCH_SIZE, env):
 
             # Perform one step of the optimization (on the target network)
             # update(memory, policy_net)
-
+        
+        #Prints the number of times steps and the reward including the penalty from driving off road
         print("Episode {}, gave reward: {} and took {} seconds for {} timesteps".format(i_episode, episodeRew[-1], (time.time()-episodeStart), timestep))
         #writer.write(str(episodeRew) + "\n")
         #print("Written")
